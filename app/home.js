@@ -1,8 +1,8 @@
 import { View, Text, ScrollView, SafeAreaView } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { useState } from "react";
-
+import { FIREBASE_AUTH } from "./secrets/FirebaseConfig";
 import { COLORS, SIZES, icons, images } from "../constants";
 import {
   Welcome,
@@ -10,10 +10,29 @@ import {
   Popularjobs,
   ScreenHeaderBtn,
 } from "../components";
+import { getAuth, signOut } from "firebase/auth";
 
 const Home = () => {
+  const auth = getAuth();
+  const [userEmail, setUserEmail] = useState("");
+  useEffect(() => {
+    FIREBASE_AUTH.onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUserEmail(user.email);
+      }
+    });
+  });
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
+  const handleSignOut = () => {
+    signOut(auth)
+      .then(() => {
+        router.push("/");
+      })
+      .catch((error) => {
+        console.error("Sign out error:", error);
+      });
+  };
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.lightWhite }}>
       <Stack.Screen
@@ -24,7 +43,7 @@ const Home = () => {
             <ScreenHeaderBtn iconUrl={icons.menu} dimension="60%" />
           ),
           headerRight: () => (
-            <ScreenHeaderBtn iconUrl={images.profile} dimension="100%" />
+            <HeadeProfileBtn email={userEmail} handlePress={handleSignOut} />
           ),
           headerTitle: "",
         }}
@@ -33,6 +52,7 @@ const Home = () => {
         <View style={{ flex: 1, padding: SIZES.medium }}>
           <Welcome
             searchTerm={searchTerm}
+            userEmail={userEmail}
             setSearchTerm={setSearchTerm}
             handleClick={() => {
               if (searchTerm) {
